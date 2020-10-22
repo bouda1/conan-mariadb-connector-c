@@ -1,7 +1,6 @@
 # MariaDB-connector-c
 
-[![GitHub tag](https://img.shields.io/github/tag/StableCoder/mariadb-connector-c.svg)](https://github.com/StableCoder/mariadb-connector-c/releases)
-[![license](https://github.com/badge/licence-MIT-blue.svg)](https://bouda1/conan-mariadb-connector-c/master/LICENSE)
+[![license](https://github.com/badge/licence-MIT-blue.svg)](https://github.com/bouda1/conan-mariadb-connector-c/master/LICENSE)
 
 [Conan](https://www.conan.io/) package for the [MariaDB Connector/C](https://mariadb.com/kb/en/library/mariadb-connector-c/) library.
 
