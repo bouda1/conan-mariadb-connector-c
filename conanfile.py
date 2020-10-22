@@ -4,9 +4,9 @@ import os
 
 class MariadbConnectorConan(ConanFile):
     name = "mariadb-connector-c"
-    version = "3.1.5"
+    version = "3.1.10"
     license = "LGPL 2.1"
-    url = "https://github.com/zinnion/conan-mariadb-connector-c"
+    url = "https://github.com/bouda1/conan-mariadb-connector-c"
     homepage = "https://github.com/MariaDB/mariadb-connector-c"    
     description = "MariaDB Connector/C is used to connect applications developed in C/C++ to MariaDB and MySQL databases."
     settings = "os", "compiler", "build_type", "arch"
@@ -15,14 +15,22 @@ class MariadbConnectorConan(ConanFile):
                "with_dyncol": [True, False],
                "with_mysqlcompat": [True, False],
                "with_ssl": [True, False]}
-    default_options = "with_curl=False", "with_dyncol=True", "with_external_zlib=False", "with_mysqlcompat=False", "with_ssl=True"
+    default_options = "with_curl=False", "with_dyncol=True", "with_external_zlib=True", "with_mysqlcompat=False", "with_ssl=True"
     generators = "cmake"
     source_subfolder = "source_subfolder"
 
     def source(self):
-        tools.get("{0}/archive/v{1}.tar.gz".format(self.homepage, self.version))
-        extracted_dir = self.name + "-" + self.version
-        os.rename(extracted_dir, self.source_subfolder)
+        tools.get(
+            "https://downloads.mariadb.org/f/connector-c-{0}/mariadb-connector-c-{0}-src.zip".format(self.version))
+        os.rename(
+            "mariadb-connector-c-{0}-src".format(self.version), self.source_subfolder)
+        tools.replace_in_file("{0}/CMakeLists.txt".format(self.source_subfolder), "PROJECT(mariadb-connector-c C)",
+                              '''PROJECT(mariadb-connector-c C)
+ include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
+ conan_basic_setup()''')
+
+        tools.replace_in_file("{0}/libmariadb/CMakeLists.txt".format(self.source_subfolder), "SET_TARGET_PROPERTIES(mariadbclient PROPERTIES IMPORTED_INTERFACE_LINK_LIBRARIES", '''TARGET_LINK_LIBRARIES (libmariadb LINK_PRIVATE "-lpthread")
+SET_TARGET_PROPERTIES(mariadbclient PROPERTIES IMPORTED_INTERFACE_LINK_LIBRARIES''')
 
     def config_options(self):
         if self.settings.os == "Windows":
@@ -30,27 +38,28 @@ class MariadbConnectorConan(ConanFile):
 
     def requirements(self):
         if self.options.with_ssl:
-            self.requires("OpenSSL/1.1.1d@zinnion/stable")
+            self.requires("openssl/1.1.1h")
         if self.options.with_external_zlib:
-            self.requires("zlib/1.2.11@zinnion/stable")
+            self.requires("zlib/1.2.11")
         if self.options.with_curl:
-            self.requires("libcurl/7.64.1@zinnion/stable")
+            self.requires("libcurl/7.64.1@bincrafters/stable")
 
     def build(self):
         cmake = CMake(self)
-        #cmake.definitions["WITH_UNIT_TESTS"] = False
-        #if self.settings.os != "Windows":
-        #    cmake.definitions["CMAKE_POSITION_INDEPENDENT_CODE"] = True
-        #if not self.options.with_curl:
-        #    cmake.definitions["WITH_CURL"] = False
-        #if not self.options.with_dyncol:
-        #    cmake.definitions["WITH_DYNCOL"] = False
-        #if self.options.with_external_zlib:
-        #    cmake.definitions["WITH_EXTERNAL_ZLIB"] = True
-        #if self.options.with_mysqlcompat:
-        #    cmake.definitions["WITH_MYSQLCOMPAT"] = True
+        cmake_debug = CMake(self, build_type="Release")
+        cmake.definitions["WITH_UNIT_TESTS"] = False
+        if self.settings.os != "Windows":
+            cmake.definitions["CMAKE_POSITION_INDEPENDENT_CODE"] = True
+        if not self.options.with_curl:
+            cmake.definitions["WITH_CURL"] = False
+        if not self.options.with_dyncol:
+            cmake.definitions["WITH_DYNCOL"] = False
+        if self.options.with_external_zlib:
+            cmake.definitions["WITH_EXTERNAL_ZLIB"] = True
+        if self.options.with_mysqlcompat:
+            cmake.definitions["WITH_MYSQLCOMPAT"] = True
         if not self.options.with_ssl:
-            cmake.definitions["WITH_SSL"] = True
+            cmake.definitions["WITH_SSL"] = False
         cmake.configure(source_folder=self.source_subfolder)
         cmake.build()
 
@@ -82,12 +91,7 @@ class MariadbConnectorConan(ConanFile):
         self.copy("*.a", dst="lib", keep_path=False)
 
     def package_info(self):
-        self.cpp_info.libs = tools.collect_libs(self)        
-        #if self.settings.os == "Windows":
-            #self.cpp_info.libs = ["libmariadb", "mariadbclient"]
-            #self.cpp_info.libs.append('libmariadb')
-            #self.cpp_info.libs.append('mariadbclient')
-        #else:
-            #self.cpp_info.libs.append('mariadb')
-            #self.cpp_info.libs.append('mariadbclient')
-            ##self.cpp_info.libs = ["mariadb", "mariadbclient"]
+        if self.settings.os == "Windows":
+            self.cpp_info.libs = ["libmariadb", "mariadbclient"]
+        else:
+            self.cpp_info.libs = ["mariadb", "mariadbclient"]
