@@ -1,4 +1,4 @@
-# MariaDB-connector-c
+# MariaDB-connector-c 3.1.10
 
 [![license](https://github.com/badge/licence-MIT-blue.svg)](https://github.com/bouda1/conan-mariadb-connector-c/blob/master/LICENSE)
 
